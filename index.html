@@ -1,0 +1,224 @@
+<html>
+  <head>
+<style>
+body {
+  font-family: sans-serif;
+}
+a {
+  color: #369;
+}
+.note {
+  width: 500px;
+  margin: 50px auto;
+  font-size: 1.1em;
+  color: #333;
+  text-align: justify;
+}
+#drop-area {
+  border: 2px dashed #ccc;
+  border-radius: 20px;
+  width: 480px;
+  margin: 50px auto;
+  padding: 20px;
+}
+#drop-area.highlight {
+  border-color: purple;
+  background-color: grey;
+}
+p {
+  margin-top: 0;
+}
+.my-form {
+  margin-bottom: 10px;
+}
+#gallery {
+  margin-top: 10px;
+}
+#gallery img {
+  width: 150px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.button {
+  display: inline-block;
+  padding: 10px;
+  background: #ccc;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.button:hover {
+  background: #ddd;
+}
+#fileElem {
+  display: none;
+}
+.info {
+  text-align: center;
+}
+#error {
+  color: red;
+}
+</style>
+  </head>
+<body>
+  <h1 class="info">wsend PICO-8 upload tool</h1>
+  <h2 class="info">A quick way to share PICO-8 carts on the web using wsend</h2>
+  <h3 class="info"><a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a></h3>
+  <h3 class="info"><a href="https://wsend.net">wsend</a></h3>
+  <h4 class="info" id="error"></h4>
+<div id="drop-area">
+  <form class="my-form">
+    <p>Drag and drop (or select) both the HTML file and the JS file at the same time. This is from the output of your PICO-8 export command.</p>
+    <input type="file" id="fileElem" multiple accept=".html,.js" onchange="handleFiles(this.files)">
+    <label class="button" for="fileElem">Select the .html and the .js</label>
+  </form>
+  <div id="gallery" /></div>
+</div>
+
+<script>
+// ************************ Drag and drop ***************** //
+let dropArea = document.getElementById("drop-area")
+
+// Prevent default drag behaviors
+;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, preventDefaults, false)   
+  document.body.addEventListener(eventName, preventDefaults, false)
+})
+
+// Highlight drop area when item is dragged over it
+;['dragenter', 'dragover'].forEach(eventName => {
+  dropArea.addEventListener(eventName, highlight, false)
+})
+
+;['dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, unhighlight, false)
+})
+
+// Handle dropped files
+dropArea.addEventListener('drop', handleDrop, false)
+
+function preventDefaults (e) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function highlight(e) {
+  dropArea.classList.add('highlight')
+}
+
+function unhighlight(e) {
+  dropArea.classList.remove('active')
+  dropArea.classList.remove('highlight')
+}
+
+function handleDrop(e) {
+  var dt = e.dataTransfer
+  var files = dt.files
+
+  handleFiles(files)
+}
+
+
+function handleFiles(files) {
+  files = [...files]
+  const file0 = files[0];
+  const file1 = files[1];
+  let js, html;
+  if (file0.name.match(/\.js$/)) {
+    js = file0;
+    html = file1;
+  } else {
+    js = file1;
+    html = file0;
+  }
+  uploadFile(js, html);
+}
+
+
+
+async function uploadFile(js, html) {
+  let errorDisplay = document.getElementById('error');
+  let err = '';
+  if (!(js && html)) {
+    err = 'error 2 files required';
+    console.log(err);
+    errorDisplay.innerText = err;
+    return;
+  }
+  if (!js.name.match(/\.js$/)) {
+    err = 'need 1 js file and 1 html file';
+    console.log(err);
+    errorDisplay.innerText = err;
+    return;
+  }
+  if (!html.name.match(/\.html$/)) {
+    err = 'need 1 js file and 1 html file';
+    console.log(err);
+    errorDisplay.innerText = err;
+    return;
+  }
+
+  console.log('html');
+  console.log(html);
+  let url = 'https://wsend.net/createunreg';
+  var myHeaders = new Headers();
+  //myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+  myHeaders.append('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+  myHeaders.append('Accept', 'text/plain');
+  let response = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    cache: 'default',
+    headers: myHeaders,
+    body: 'start=1'
+  });
+  let uid = await response.text();
+  console.log(uid);
+  if (uid === '') {
+    console.log('uid empty');
+    return;
+  }
+  url = 'https://wsend.net/upload_cli';
+  formData = new FormData();
+
+  formData.append('filehandle', js);
+  formData.append('uid', uid);
+
+  response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+  let jslink = await response.text();
+
+  console.log(jslink);
+  var t2 = 't2 replace here';
+  var reader = new FileReader();
+  reader.readAsText(html);
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  reader.onload = function(){
+    var text = reader.result;
+    console.log("before");
+    t2 = text.replace(/e\.src = ".*\.js";/m, `e.src = "${jslink}";`);
+    console.log("after");
+  };
+  await sleep(1000);
+  var blob = new Blob([t2], { type: html.type });
+  formData = new FormData()
+
+  formData.append('filehandle', blob, html.name);
+  formData.append('uid', uid);
+
+  response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+  let wsendLink = await response.text();
+  window.open(wsendLink, "_blank");
+}
+</script>
+</body>
+</html>
