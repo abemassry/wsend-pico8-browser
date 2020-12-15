@@ -167,19 +167,24 @@ async function uploadFile(js, html) {
   //myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
   myHeaders.append('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
   myHeaders.append('Accept', 'text/plain');
-  let response = await fetch(url, {
-    method: 'POST',
-    mode: 'cors',
-    cache: 'default',
-    headers: myHeaders,
-    body: 'start=1'
-  });
-  let uid = await response.text();
-  console.log(uid);
-  if (uid === '') {
-    console.log('uid empty');
-    return;
+  let response;
+  let uid = localStorage.getItem('uid');
+  if (!uid) {
+    let response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'default',
+      headers: myHeaders,
+      body: 'start=1'
+    });
+    uid = await response.text();
+    console.log(uid);
+    if (uid === '') {
+      console.log('uid empty');
+      return;
+    }
   }
+  localStorage.setItem('uid', uid);
   url = 'https://wsend.net/upload_cli';
   formData = new FormData();
 
