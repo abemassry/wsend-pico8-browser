@@ -30,3 +30,4 @@ With many thanks to [zep.p8](https://twitter.com/lexaloffle) for
 building this awesome [Fantasy
 Console](https://www.lexaloffle.com/pico-8.php)
 
+Most of the design came from [this awesome post](https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/)
