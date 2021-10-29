@@ -1,7 +1,7 @@
 # wsend-pico8-browser
 A quick way to show a PICO-8 cart from the browser
 
-[Try Now!](http://abemassry.com/wsend-pico8-browser/)
+[Try Now!](https://abemassry.github.io/wsend-pico8-browser/)
 
 # Usage
 Drag and Drop both the `.html` file and the `.js` file from the export
